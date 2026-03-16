@@ -18,3 +18,5 @@ DINOCell is an automated cell segmentation model for live cell microscopy images
 ## 📊 Performance
 
 DINOCell demonstrates superior performance in both test-set and zero-shot cross-dataset evaluation:
+
+! [DINOCell Performance Comparison](https://github.com/kadenstillwagon/DINOCell/blob/main/assets/Model_Comparison.png)
