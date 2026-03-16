@@ -19,4 +19,27 @@ DINOCell is an automated cell segmentation model for live cell microscopy images
 
 DINOCell demonstrates superior performance in both test-set and zero-shot cross-dataset evaluation:
 
-! [DINOCell Performance Comparison](https://github.com/kadenstillwagon/DINOCell/blob/main/assets/Model_Comparison.png)
+### LIVECell Test-Set Performance
+
+Method | SEG | DET | MMA |
+|---------|--------|-----|-----|--------|
+|**DINOCell** | **0.000** | **0.000** | **0.000** |
+| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+
+### Zero-Shot Cross-Dataset Performance
+
+| Dataset | Method | SEG | DET | MMA |
+|---------|--------|-----|-----|--------|
+| PBL-HEK | **DINOCell** | **0.000** | **0.000** | **0.000** |
+| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+| PBL-N2A | **DINOCell** | **0.000** | **0.000** | **0.000** |
+| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+| Glioma-C6 | **DINOCell** | **0.000** | **0.000** | **0.000** |
+| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
