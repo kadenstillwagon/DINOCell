@@ -21,7 +21,7 @@ DINOCell demonstrates superior performance in both test-set and zero-shot cross-
 
 ### LIVECell Test-Set Performance
 
-Method | SEG | DET | MMA |
+| Method | SEG | DET | MMA |
 |---------|--------|-----|-----|--------|
 |**DINOCell** | **0.000** | **0.000** | **0.000** |
 | Cellpose-SAM | 0.000 | 0.000 | 0.000 |
@@ -32,14 +32,14 @@ Method | SEG | DET | MMA |
 | Dataset | Method | SEG | DET | MMA |
 |---------|--------|-----|-----|--------|
 | PBL-HEK | **DINOCell** | **0.000** | **0.000** | **0.000** |
-| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
-| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
-| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+| | Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| | SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
 | PBL-N2A | **DINOCell** | **0.000** | **0.000** | **0.000** |
-| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
-| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
-| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+| | Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| | SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
 | Glioma-C6 | **DINOCell** | **0.000** | **0.000** | **0.000** |
-| Cellpose-SAM | 0.000 | 0.000 | 0.000 |
-| SAMCell-cyto | 0.000 | 0.000 | 0.000 |
-| SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+| | Cellpose-SAM | 0.000 | 0.000 | 0.000 |
+| | SAMCell-cyto | 0.000 | 0.000 | 0.000 |
+| | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
