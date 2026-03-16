@@ -22,7 +22,7 @@ DINOCell demonstrates superior performance in both test-set and zero-shot cross-
 ### LIVECell Test-Set Performance
 
 | Method | SEG | DET | MMA |
-|---------|--------|-----|-----|--------|
+|--------|-----|-----|------|
 |**DINOCell** | **0.000** | **0.000** | **0.000** |
 | Cellpose-SAM | 0.000 | 0.000 | 0.000 |
 | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
