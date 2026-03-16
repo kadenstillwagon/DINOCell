@@ -1,4 +1,3 @@
-import wandb
 import torch
 from torch import nn
 import cv2
@@ -7,32 +6,22 @@ import random
 from skimage.segmentation import watershed
 from cellpose.dynamics import compute_masks
 import torch.nn.functional as F
-import torchvision.transforms.functional as TTF
 import torchvision.transforms.functional as TF
-from torchvision.ops.boxes import batched_nms
 
-from metrics.seg_det import get_seg_det_metrics
 from metrics.max_matching_accuracy_and_shape_score import compute_mma_and_shape_scores
-from metrics.cell_count_score import calculate_cell_count_score
 from metrics.average_precision import calculate_average_precision
 
 import matplotlib.pyplot as plt
 
 
-def init_wandb():
-    run = wandb.init(project="cellseg")
-    return run
-    
-def log_wandb(run, current_step, learning_rate, loss):
-    run.log({"lr": learning_rate, "loss": loss}, step=current_step)
+def convert_label_to_rainbow(label):
+    label_rainbow = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
+    for cell in np.unique(label):
+        if cell == 0:
+            continue #background
+        label_rainbow[label == cell] = np.clip(np.random.rand(3) * 255, a_min=10, a_max=255)
 
-def lr_lambda_with_warmup(current_step, warmup_steps, total_steps):
-    if current_step < warmup_steps:
-        # Linear warmup
-        return float(current_step) / float(warmup_steps)
-    else:
-        # Example: Linear decay after warmup
-        return max(0.0, float(total_steps - current_step) / float(total_steps - warmup_steps))
+    return label_rainbow
 
 
 def get_metrics(gt_labels, pred_labels, ignore_masks=None):
@@ -51,37 +40,19 @@ def get_metrics(gt_labels, pred_labels, ignore_masks=None):
             else:
                 ignore_mask = np.where(ignore_masks[i] == 1, 1, 0)
 
-            # plt.imshow(ignore_mask)
-            # plt.savefig('metrics_ignore_mask.png')
-            # plt.close()
-
             pred_label = pred_label * ignore_mask
             gt_label = gt_label * ignore_mask
 
-        # plt.imshow(pred_label)
-        # plt.savefig('metrics_pred_label.png')
-        # plt.close()
-
-        # mma, shape_score = compute_mma_and_shape_scores(gt_seg=gt_label, samcell_seg=pred_label)
         mma = compute_mma_and_shape_scores(gt_seg=gt_label, samcell_seg=pred_label)
-        # cell_count_ratio, cell_count_score = calculate_cell_count_score(gt_label, pred_label)
         AP_50 = calculate_average_precision(gt_label, pred_label)
         mmas.append(mma)
-        # shape_scores.append(shape_score)
-        # cell_count_ratios.append(cell_count_ratio)
-        # cell_count_scores.append(cell_count_score)
         AP_50s.append(AP_50)
 
     # seg, det = get_seg_det_metrics(gt_label, pred_label)
 
     metrics = {
         'MMA': np.mean(mmas), 
-        'AP@50': np.mean(AP_50s), 
-        # 'SEG': seg,
-        # 'DET': det, 
-        # 'CCR': np.mean(cell_count_ratios), 
-        # 'CCS': np.mean(cell_count_scores), 
-        # 'ShapeScore': np.mean(shape_scores)
+        'AP@50': np.mean(AP_50s)
     }
 
     return metrics
@@ -95,9 +66,6 @@ def cells_from_dist_map(dist_maps):
         #find centroids of connected components
         contours, _ = cv2.findContours(cells_max.astype(np.uint8), 0, cv2.CHAIN_APPROX_SIMPLE)
         mask = np.zeros(dist_map.shape, dtype=np.int32)
-        # for i, contour in enumerate(contours):
-        #     contour = np.flip(contour, axis=2)
-        #     mask[tuple(contour.T)] = i + 1
 
         for i, contour in enumerate(contours):
             M = cv2.moments(contour)
@@ -136,13 +104,6 @@ def cells_from_flows(flows_x, flows_y, cell_prob, cellprob_threshold):
     # assemble dP with shape (2,H,W)
     dP = np.stack([flows_y, flows_x], axis=0)
 
-    # plt.imshow(flows_x)
-    # plt.savefig('metrics_flows_x.png')
-    # plt.close()
-    # plt.imshow(flows_y)
-    # plt.savefig('metrics_flows_y.png')
-    # plt.close()
-
     mask = compute_masks(
         dP=dP,
         cellprob=cell_prob,
@@ -166,115 +127,6 @@ def get_flows_metrics(pred_flows_x, pred_flows_y, pred_cell_prob, gt_labels, ign
     return get_metrics(gt_labels, pred_labels, ignore_masks)
 
 
-
-def batched_mask_to_box(masks: torch.Tensor) -> torch.Tensor:
-        """
-        Calculates boxes in XYXY format around masks. Return [0,0,0,0] for
-        an empty mask. For input shape C1xC2x...xHxW, the output shape is C1xC2x...x4.
-        """
-        # torch.max below raises an error on empty inputs, just skip in this case
-        if torch.numel(masks) == 0:
-            return torch.zeros(*masks.shape[:-2], 4, device=masks.device)
-
-        # Normalize shape to CxHxW
-        shape = masks.shape
-        h, w = shape[-2:]
-        if len(shape) > 2:
-            masks = masks.flatten(0, -3)
-        else:
-            masks = masks.unsqueeze(0)
-
-        # Get top and bottom edges
-        in_height, _ = torch.max(masks, dim=-1)
-        in_height_coords = in_height * torch.arange(h, device=in_height.device)[None, :]
-        bottom_edges, _ = torch.max(in_height_coords, dim=-1)
-        in_height_coords = in_height_coords + h * (~in_height)
-        top_edges, _ = torch.min(in_height_coords, dim=-1)
-
-        # Get left and right edges
-        in_width, _ = torch.max(masks, dim=-2)
-        in_width_coords = in_width * torch.arange(w, device=in_width.device)[None, :]
-        right_edges, _ = torch.max(in_width_coords, dim=-1)
-        in_width_coords = in_width_coords + w * (~in_width)
-        left_edges, _ = torch.min(in_width_coords, dim=-1)
-
-        # If the mask is empty the right edge will be to the left of the left edge.
-        # Replace these boxes with [0, 0, 0, 0]
-        empty_filter = (right_edges < left_edges) | (bottom_edges < top_edges)
-        out = torch.stack([left_edges, top_edges, right_edges, bottom_edges], dim=-1)
-        out = out * (~empty_filter).unsqueeze(-1)
-
-        # Return to original shape
-        if len(shape) > 2:
-            out = out.reshape(*shape[:-2], 4)
-        else:
-            out = out[0]
-
-        return out
-
-def convert_direct_mask_preds_to_segmentations(preds, iou_preds, crop_size, adaptive_thresh=0.01, iou_thresh=0.1, nms_thresh=0.99, min_area=15):
-    if len(preds) == 1:
-        mask_preds = preds[0].unsqueeze(0)
-    elif len(preds) > 1:
-        mask_preds = torch.stack(preds).to(preds[0].device)
-    else:
-        return torch.zeros((1, crop_size, crop_size))
-
-    #blur masks to make smoother for decoding
-    mask_preds = TTF.gaussian_blur(mask_preds, kernel_size=[5, 5], sigma=[2.0, 2.0])
-
-    #binarize masks using adaptive threshold
-    thresholds = (torch.where(mask_preds > 0.01, mask_preds, 0).sum(dim=(1, 2)) / torch.where(mask_preds > 0.01, 1, 0).sum(dim=(1, 2))) * adaptive_thresh
-    binary_mask_preds = torch.where(mask_preds > thresholds.view(thresholds.shape[0], 1, 1), 1, 0)
-
-    #filter out masks below predicted iou threshold
-    valid_indices = torch.argwhere(torch.tensor(iou_preds) > iou_thresh).squeeze(1)
-    valid_preds = binary_mask_preds[valid_indices]
-    valid_iou_preds = torch.tensor(iou_preds)[valid_indices]
-    
-
-    #remove duplicate masks via nms
-    mask_boxes = batched_mask_to_box(valid_preds)
-    indices_to_keep = batched_nms(
-        mask_boxes.float(),
-        valid_iou_preds,
-        torch.zeros_like(mask_boxes[:, 0]),  # categories
-        iou_threshold=nms_thresh,
-    )
-    filtered_masks = valid_preds[indices_to_keep]
-    valid_original_indices = valid_indices[indices_to_keep]
-    valid_iou_preds = torch.tensor(iou_preds)[valid_original_indices]
-
-    #remove small masks and small holes
-    cleaned_masks = []
-    for mask in filtered_masks:
-        mask = remove_small_regions(mask.detach().cpu().numpy(), min_area, mode="holes")
-        mask = remove_small_regions(mask, min_area, mode="islands")
-        cleaned_masks.append(torch.tensor(mask))
-
-    if len(cleaned_masks) > 1:
-        cleaned_mask_scores = torch.stack(cleaned_masks) * mask_preds[valid_original_indices]
-    elif len(cleaned_masks) == 1:
-        return cleaned_masks[0].unsqueeze(0)
-    else:
-        return torch.zeros((1, crop_size, crop_size))
-
-
-    background_layer = torch.ones(cleaned_mask_scores[0].shape).unsqueeze(0).to(mask_preds.device) * 1e-5
-    filtered_preds = torch.cat([background_layer, cleaned_mask_scores])
-    non_overlapping_segmentations = torch.argmax(filtered_preds, axis=0).detach().cpu().numpy()
-
-    return non_overlapping_segmentations
-
-def get_direct_mask_metrics(objectness_preds, iou_preds, gt_labels, ignore_masks=None, crop_size=256):
-    pred_labels = convert_direct_mask_preds_to_segmentations(objectness_preds[0], iou_preds[0], crop_size=crop_size)
-
-    if len(pred_labels.shape) == 2:
-        pred_labels = np.array([pred_labels])
-
-    return get_metrics(gt_labels, pred_labels, ignore_masks)
-
-
 # From https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/batch_norm.py # noqa
 # Itself from https://github.com/facebookresearch/ConvNeXt/blob/d1fa8f6fef0a165b27399986cc2bdacc92777e40/models/convnext.py#L119  # noqa
 class LayerNorm2d(nn.Module):
@@ -290,113 +142,6 @@ class LayerNorm2d(nn.Module):
         x = (x - u) / torch.sqrt(s + self.eps)
         x = self.weight[:, None, None] * x + self.bias[:, None, None]
         return x
-
-
-#####################
-#  SOFT DICE LOSS
-#####################
-class SoftDiceLoss(nn.Module):
-    def __init__(self, eps=1e-6):
-        """
-        Soft Dice Loss for binary segmentation.
-        
-        Args:
-            eps (float): A small constant for numerical stability to avoid 
-                            division by zero.
-        """
-        super(SoftDiceLoss, self).__init__()
-        self.eps = eps
-
-    def forward(self, preds, targets):
-        """
-        Calculates the soft Dice loss.
-
-        Args:
-            preds (torch.Tensor): The model's predictions (probabilities).
-            targets (torch.Tensor): The ground truth labels (binary, 0 or 1).
-        
-        Returns:
-            torch.Tensor: The computed loss value.
-        """
-        # Flatten the preds and targets for easier computation
-        preds = preds.view(-1)
-        targets = targets.view(-1)
-        
-        intersection = (preds * targets).sum()
-        dice_coefficient = (2. * intersection + self.eps) / (preds.sum() + targets.sum() + self.eps)
-        
-        # Dice loss is 1 - Dice coefficient
-        loss = 1.0 - dice_coefficient
-        
-        return loss
-
-
-#####################
-#        IoU
-#####################
-def get_IoU(preds: torch.Tensor, targets: torch.Tensor, eps: float = 1e-6):
-    """
-    Calculates the Intersection over Union (IoU) metric for binary segmentation masks
-
-    Args:
-        preds (torch.Tensor): Predicted masks (e.g., after a sigmoid and thresholding), 
-                                 binary tensor of shape (B, H, W) or (B, 1, H, W), etc.
-        targets (torch.Tensor): Ground truth masks, binary tensor of the same shape as preds.
-        eps (float): A small value to prevent division by zero.
-
-    Returns:
-        float: The IoU score as a Python float.
-    """
-    # Use int or float tensors for the operations
-    preds = preds.int()
-    targets = targets.int()
-    
-    # Flatten the spatial dimensions for easier sum
-    # Shape: (B, H*W)
-    preds_flat = preds.flatten(start_dim=-2)
-    targets_flat = targets.flatten(start_dim=-2)
-
-    # Calculate intersection (logical AND)
-    intersection = (preds_flat & targets_flat).float().sum(dim=-1)
-
-    # Calculate union (logical OR)
-    union = (preds_flat | targets_flat).float().sum(dim=-1)
-
-    # Handle cases where the union is 0 to avoid division by zero
-    # Add a small epsilon to prevent errors
-    iou = (intersection + eps) / (union + eps)
-
-    return iou
-
-
-#####################
-#   MASK CLEANING
-#####################
-def remove_small_regions(
-    mask: np.ndarray, area_thresh: float, mode: str
-):
-    """
-    Removes small disconnected regions and holes in a mask. Returns the
-    mask and an indicator of if the mask has been modified.
-    """
-    import cv2  # type: ignore
-
-    assert mode in ["holes", "islands"]
-    correct_holes = mode == "holes"
-    working_mask = (correct_holes ^ mask).astype(np.uint8)
-    n_labels, regions, stats, _ = cv2.connectedComponentsWithStats(working_mask, 8)
-    sizes = stats[:, -1][1:]  # Row 0 is background label
-    small_regions = [i + 1 for i, s in enumerate(sizes) if s < area_thresh]
-    if len(small_regions) == 0:
-        return mask
-    fill_labels = [0] + small_regions
-    if not correct_holes:
-        fill_labels = [i for i in range(n_labels) if i not in fill_labels]
-        # If every region is below threshold, keep largest
-        if len(fill_labels) == 0:
-            fill_labels = [int(np.argmax(sizes)) + 1]
-    mask = np.isin(regions, fill_labels)
-    return mask
 
 
 #####################

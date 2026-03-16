@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import monai
 from tqdm import tqdm
 import cv2
 import random
@@ -12,12 +11,11 @@ import torch
 from torch.optim import Adam, AdamW
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import LambdaLR
-from torch import nn
 
 import torchvision.transforms.functional as F
 
 from model import DINOCell
-from utils import lr_lambda_with_warmup, full_dataset_list, pc_bf_non_tissue_whole_cell_only_dataset, fluorescent_dataset_list, tissue_dataset_list, get_metrics
+from utils import lr_lambda_with_warmup, full_dataset_list, pc_bf_non_tissue_whole_cell_only_dataset, fluorescent_dataset_list, tissue_dataset_list
 from dataset import get_dataset, DINOCellOODDataset
 from pipeline import get_pipeline
 
@@ -401,13 +399,13 @@ if __name__ == '__main__':
   set_seed(42)
 
   #train options setup
-  num_epochs = 80 #40, 80 #CHANGE
-  patch_size = 14 #8, 14 CHANGE
+  num_epochs = 40 #40, 80 #CHANGE
+  patch_size = 8 #8, 14 CHANGE
   crop_size = 512 #512, 256 CHANGE
   finetune_vision = True 
-  lower_lr_encoder = True # CHANGE 
+  lower_lr_encoder = False # CHANGE 
   delayed_encoder_unfreezing = False 
-  hyperparameter_type = 'hyperparam_4' #original, cellpose_sam, gpt_suggested, hyperparam_4, hyperparam_5, hyperparam_6 #CHANGE
+  hyperparameter_type = 'hyperparam_5' #original, cellpose_sam, gpt_suggested, hyperparam_4, hyperparam_5, hyperparam_6 #CHANGE
   dropout_in_encoder = True
   use_ignore_masks = True
   ignore_all = True
@@ -420,8 +418,8 @@ if __name__ == '__main__':
   dino_type = f'domain_adaption_patch_size_{patch_size}' #CHANGE
   # dino_type = f'random_init_patch_size_{patch_size}'
   # dino_type = f'pretrained_but_not_domain_adapted'
-  dino_model = f'../pretrained_dino_models/dino_{dino_type}_checkpoint_19999.pth' # CHANGE
-  # dino_model = f'../pretrained_dino_models/dino_{dino_type}_checkpoint_24799.pth'
+  # dino_model = f'../pretrained_dino_models/dino_{dino_type}_checkpoint_19999.pth' # CHANGE
+  dino_model = f'../pretrained_dino_models/dino_{dino_type}_checkpoint_24799.pth'
   # dino_model = f'../pretrained_dino_models/dino_{dino_type}_checkpoint_99999.pth'
   if dino_type == f'random_init_patch_size_{patch_size}':
     dino_model = '../pretrained_dino_models/dino_random_init_patch_size_14_checkpoint_34399.pth'
@@ -509,16 +507,10 @@ if __name__ == '__main__':
 
 
   #model setup
-  sam_model = 'facebook/sam-vit-base' #deprecated but leaving for now
-  if objective_type == 'direct_mask_prediction' or objective_type == 'direct_mask_prediction_independent_encoding':
-    flows_model_modifier = f'piw_{str(int(ignore_mask_weight * 100))}_isd_{str(include_silver_data)}_hpt_{hyperparameter_type}_die_{dropout_in_encoder}_ftv_{str(finetune_vision)}_llre_{str(lower_lr_encoder)}_deu_{str(delayed_encoder_unfreezing)}_cs_{crop_size}_sdw_{str(int(silver_data_weight * 100))}_ne_{num_epochs}'
-    flows_model = f'../models/DINOCell_{dataset_type}_{dino_type}_{decoder_type}_flows_{flows_model_modifier}_train_checkpoint.pth'
-  else:
-    flows_model = None
   if delayed_encoder_unfreezing:
     finetune_vision = False
   print('loading model...') # CHANGE - loss function for direct mask prediction
-  model = DINOCell(dino_model, sam_model, flows_model, decoder_type, objective_type, use_dino_weights, patch_size, feat_size=64, crop_size=crop_size, drop_rate=drop_rate, dropout_in_encoder=dropout_in_encoder, finetune_vision=finetune_vision, finetune_decoder=True, finetune_prediction_head=True) 
+  model = DINOCell(dino_model, decoder_type, objective_type, use_dino_weights, patch_size, feat_size=64, crop_size=crop_size, drop_rate=drop_rate, dropout_in_encoder=dropout_in_encoder, finetune_vision=finetune_vision, finetune_decoder=True, finetune_prediction_head=True) 
 
   #train setup
   device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -553,7 +545,7 @@ if __name__ == '__main__':
       betas=(0.9, 0.999)
     ) 
     
-    #normal lr: 1e-5, lower: 1e-6, old weight_decay: 0.1, now: 1e-3
+  #normal lr: 1e-5, lower: 1e-6, old weight_decay: 0.1, now: 1e-3
   scheduler = LambdaLR(optimizer, lr_lambda=lambda step: lr_lambda_with_warmup(step, warmup_steps=(num_epochs * len(train_dataset)) // 5, total_steps=(num_epochs * len(train_dataset))))
 
   pipeline = get_pipeline(objective_type, model, device, crop_size=crop_size, use_advanced_augmentations=use_advanced_augmentations)
@@ -602,9 +594,6 @@ if __name__ == '__main__':
 
     #val step
     val_loss, val_metrics = val(model=model, patch_size=patch_size, val_dataloader=val_dataloader, pipeline=pipeline, dataset_root_path=dataset_root_path, dataset_type=dataset_type, objective_type=objective_type, log_path=log_path, epoch=epoch, device=device)
-
-    #test step
-    # test_loss, test_metrics = test(model=model, patch_size=patch_size, test_dataloader=test_dataloader, pipeline=pipeline, dataset_root_path=dataset_root_path, dataset_type=dataset_type, log_path=log_path, epoch=epoch, device=device)
 
     #ood_test step
     ood_test_bbbc030_metrics, ood_test_hek_metrics, ood_test_n2a_metrics = ood_test(model=model, ood_dataloader_bbbc030=ood_dataloader_bbbc030, ood_dataloader_hek=ood_dataloader_hek, ood_dataloader_n2a=ood_dataloader_n2a, pipeline=pipeline, objective_type=objective_type, log_path=log_path, epoch=epoch, device=device)
