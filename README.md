@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)](https://doi.org/10.1371/journal.pone.0319532)
+[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)]([https://](https://arxiv.org/))
 
 DINOCell is an automated cell segmentation model for live cell microscopy images. Through initialization with DINOv2 weights, pretrained on 1.2B images, and domain-adaptation on 130k unlabeled cell images, DINOCell achieves unparalleled performance across a wide variety of cell types and microscope conditions.
 
@@ -43,3 +43,82 @@ DINOCell demonstrates superior performance in both test-set and zero-shot cross-
 | | Cellpose-SAM | 0.315 | 0.387 | 0.360 |
 | | SAMCell-cyto | 0.475 | 0.576 | 0.513 |
 | | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
+
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Install from PyPI (recommended)
+pip install dinocell
+
+# Or install from source
+git clone https://github.com/kadenstillwagon/DINOCell.git
+cd DINOCell
+pip install -e .
+```
+
+### Basic Usage
+
+```python
+import matplotlib.pyplot as plt
+from dinocell import segment
+
+#Set Image Path
+img_path = 'demo_images/LiveCell_test_image.png'
+
+#Get Model Output
+output_segmentations = segment(img_path)
+
+#Visualize
+plt.imshow(output)
+plt.show()
+```
+
+### Command Line Interface
+
+```bash
+# Segmentation
+dinocell segment image.png --output results/
+
+```
+
+## 📄 Citation
+
+If you use DINOCell in your research, please cite our paper:
+
+Stillwagon K, VandeLoo AD*, Magondu B, Forest C.R. (2026) DINOCell: Self-supervised Pretraining of Cell Segmentation Models.
+
+```bibtex
+
+```
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/kadenstillwagon/DINOCell/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/kadenstillwagon/DINOCell/discussions)
+- **Email**: kstillwagon26@gatech.edu
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏛️ Institutions
+
+This work was developed at:
+- **Georgia Institute of Technology**
+  - School of Biological Sciences
+  - School of Computer Science  
+  - Department of Biomedical Engineering
+  - School of Mechanical Engineering
+
+## 🙏 Acknowledgments
+
+- Meta AI for the original DINOv2
+- The open-source community for tools and datasets
+- Georgia Tech for computational resources
+- All contributors and users of DINOCell
+
+---
+
