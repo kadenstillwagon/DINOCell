@@ -84,7 +84,7 @@ dinocell segment image.png --output results/
 
 ```
 
-## 📄 Citation
+## Citation
 
 If you use DINOCell in your research, please cite our paper:
 
