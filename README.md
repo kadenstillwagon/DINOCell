@@ -8,14 +8,14 @@ DINOCell is an automated cell segmentation model for live cell microscopy images
 
 ![PBL HEK Segmentation](https://github.com/kadenstillwagon/DINOCell/blob/main/assets/PBL_HEK_example_out.png)
 
-## 🌟 Key Features
+## Key Features
 
 - **State-of-the-art Performance**: Outperforms existing methods like Cellpose-SAM and SAMCell on both test-set and zero-shot cross-dataset evaluation
 - **Zero-shot Generalization**: Works on novel cell types and microscopes not seen during training
 - **Vision Transformer Architecture**: Leverages DINOv2's ViT-based encoder pretrained on 1.2B images for robust image representations, which are further tuned for microscopy through domain-adaptation on 130k unlabeled cell images.
 - **Flows Regression**: Predicts Cellpose-style Flows instead of binary masks, enabling better separation of densely packed cells
 
-## 📊 Performance
+## Performance
 
 DINOCell demonstrates superior performance in both test-set and zero-shot cross-dataset evaluation:
 
@@ -45,7 +45,7 @@ DINOCell demonstrates superior performance in both test-set and zero-shot cross-
 | | SAMCell-LIVECell | 0.000 | 0.000 | 0.000 |
 
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -94,17 +94,17 @@ Stillwagon K, VandeLoo AD*, Magondu B, Forest C.R. (2026) DINOCell: Self-supervi
 
 ```
 
-## 📞 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/kadenstillwagon/DINOCell/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/kadenstillwagon/DINOCell/discussions)
 - **Email**: kstillwagon26@gatech.edu
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🏛️ Institutions
+## Institutions
 
 This work was developed at:
 - **Georgia Institute of Technology**
@@ -113,7 +113,7 @@ This work was developed at:
   - Department of Biomedical Engineering
   - School of Mechanical Engineering
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Meta AI for the original DINOv2
 - The open-source community for tools and datasets
