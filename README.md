@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)]([https://](https://arxiv.org/))
+[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)]([[https://](https://arxiv.org/)](https://arxiv.org/abs/2604.10609))
 
 DINOCell is an automated cell segmentation model for live cell microscopy images. Through initialization with DINOv2 weights, pretrained on 1.2B images, and domain-adaptation on 130k unlabeled cell images, DINOCell achieves unparalleled performance across a wide variety of cell types and microscope conditions.
 
@@ -88,10 +88,18 @@ dinocell segment image.png --output results/
 
 If you use DINOCell in your research, please cite our paper:
 
-Stillwagon K, VandeLoo AD*, Magondu B, Forest C.R. (2026) DINOCell: Self-supervised Pretraining of Cell Segmentation Models.
+Stillwagon K, VandeLoo AD*, Magondu B, Forest C.R. (2026) Self-supervised Pretraining of Cell Segmentation Models. https://arxiv.org/abs/2604.10609.
 
 ```bibtex
-
+  @misc{stillwagon2026selfsupervisedpretrainingcellsegmentation,
+        title={Self-supervised Pretraining of Cell Segmentation Models}, 
+        author={Kaden Stillwagon and Alexandra Dunnum VandeLoo and Benjamin Magondu and Craig R. Forest},
+        year={2026},
+        eprint={2604.10609},
+        archivePrefix={arXiv},
+        primaryClass={cs.CV},
+        url={https://arxiv.org/abs/2604.10609}, 
+  }
 ```
 
 ## Support
