@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)]([[https://](https://arxiv.org/)](https://arxiv.org/abs/2604.10609))
+[![Paper](https://img.shields.io/badge/Paper-Arxiv-red.svg)](https://arxiv.org/abs/2604.10609)
 
 DINOCell is an automated cell segmentation model for live cell microscopy images. Through initialization with DINOv2 weights, pretrained on 1.2B images, and domain-adaptation on 130k unlabeled cell images, DINOCell achieves unparalleled performance across a wide variety of cell types and microscope conditions.
 
